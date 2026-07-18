@@ -2,20 +2,10 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Button, Card, ErrorBanner, Loading } from "../components/UI";
 
-const PRESET_CATEGORIES = [
-  "Daily-Lunch",
-  "Petrol",
-  "Lend",
-  "Borrow",
-  "Outing",
-  "Bills",
-  "Home Expenses",
-  "Misc",
-];
-
 export default function QuickAdd() {
   const [wallets, setWallets] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -29,17 +19,19 @@ export default function QuickAdd() {
   const [note, setNote] = useState("");
 
   useEffect(() => {
-    Promise.all([api.get("/wallets/"), api.get("/friends/")])
-      .then(([w, f]) => {
+    Promise.all([api.get("/wallets/"), api.get("/friends/"), api.get("/categories/")])
+      .then(([w, f, c]) => {
         setWallets(w);
         setFriends(f);
+        setCategories(c);
         if (w.length) setWallet(String(w[0].id));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const needsFriend = category === "Lend" || category === "Borrow";
+  const selectedCategory = categories.find((c) => c.name === category);
+  const needsFriend = !!selectedCategory?.is_friend_related;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -146,18 +138,18 @@ export default function QuickAdd() {
           <div>
             <label className="block text-sm font-medium mb-1">Category</label>
             <div className="grid grid-cols-4 gap-2">
-              {PRESET_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <button
                   type="button"
-                  key={c}
-                  onClick={() => setCategory(c === category ? "" : c)}
+                  key={c.id}
+                  onClick={() => setCategory(c.name === category ? "" : c.name)}
                   className={`py-2 px-1 rounded-lg text-xs font-medium border truncate ${
-                    category === c
+                    category === c.name
                       ? "bg-brand text-navy border-brand"
                       : "border-app-border text-text-secondary"
                   }`}
                 >
-                  {c}
+                  {c.name}
                 </button>
               ))}
             </div>
