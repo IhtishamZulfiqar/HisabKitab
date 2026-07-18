@@ -15,7 +15,8 @@ ever sees their own wallets, transactions, budgets and goals.
 - **Wallets:** track balances across bank, mobile wallet and cash accounts, with wallet-to-wallet
   transfers
 - **Transactions:** log income/expenses, filter by wallet, category, friend and date range
-- **Quick Add:** fast single-form entry for day-to-day transactions
+- **Quick Add:** fast single-form entry for day-to-day transactions, including direct
+  wallet-to-wallet transfers
 - **Categories:** custom categories, flagged as friend-related and/or goal-related
 - **Friends:** running ledger per friend with a net balance for shared lending/borrowing
 - **Budgets:** monthly per-category limits with spent/remaining and percent-used tracking
