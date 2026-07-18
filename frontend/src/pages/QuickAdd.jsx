@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { Button, Card, ErrorBanner, Loading } from "../components/UI";
 
+const TYPE_TO_DIRECTION = { expense: "OUT", income: "IN", transfer: "TRANSFER" };
+
 export default function QuickAdd() {
+  const [searchParams] = useSearchParams();
   const [wallets, setWallets] = useState([]);
   const [friends, setFriends] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -13,7 +17,7 @@ export default function QuickAdd() {
 
   const [wallet, setWallet] = useState("");
   const [amount, setAmount] = useState("");
-  const [direction, setDirection] = useState("OUT");
+  const [direction, setDirection] = useState(TYPE_TO_DIRECTION[searchParams.get("type")] || "OUT");
   const [category, setCategory] = useState("");
   const [friend, setFriend] = useState("");
   const [note, setNote] = useState("");

@@ -10,8 +10,10 @@ ever sees their own wallets, transactions, budgets and goals.
 
 ## Features
 
-- **Dashboard:** total balance, this month's spend by category, active budgets and goals,
-  friend balances, a savings rate summary, and a 6-month income vs. spend trend chart
+- **Dashboard:** total balance, quick add shortcuts for expense/income/transfer, an over-budget
+  alert, this month's spend by category with a month-over-month change and a daily average /
+  projected month-end spend, active budgets and goals, friend balances, a savings rate summary,
+  and a 6-month income vs. spend trend chart
 - **Wallets:** track balances across bank, mobile wallet and cash accounts, with wallet-to-wallet
   transfers
 - **Transactions:** log income/expenses, filter by wallet, category, friend and date range

@@ -47,8 +47,51 @@ export default function Dashboard() {
 
   const maxCategorySpend = Math.max(1, ...data.month_spend_by_category.map((c) => Number(c.total)));
 
+  const overBudget = data.budgets.filter((b) => b.percent_used >= 100);
+
+  const prevMonthSpend =
+    data.monthly_trend.length >= 2 ? Number(data.monthly_trend[data.monthly_trend.length - 2].spend) : null;
+  const totalOut = Number(data.monthly_summary.total_out);
+  const spendChangePercent =
+    prevMonthSpend && prevMonthSpend > 0 ? ((totalOut - prevMonthSpend) / prevMonthSpend) * 100 : null;
+
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dailyAvgSpend = totalOut / dayOfMonth;
+  const projectedSpend = dailyAvgSpend * daysInMonth;
+
   return (
     <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-2">
+        <Link
+          to="/quick-add?type=expense"
+          className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-sm font-semibold bg-error-bg text-error border border-error/20"
+        >
+          Expense
+        </Link>
+        <Link
+          to="/quick-add?type=income"
+          className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-sm font-semibold bg-brand text-navy"
+        >
+          Income
+        </Link>
+        <Link
+          to="/quick-add?type=transfer"
+          className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-sm font-semibold bg-surface-2 text-text-primary border border-app-border"
+        >
+          Transfer
+        </Link>
+      </div>
+
+      {overBudget.length > 0 && (
+        <div className="bg-error-bg border border-error/30 text-error text-sm rounded-lg px-3 py-2">
+          {overBudget.length === 1
+            ? `You're over budget on ${overBudget[0].label}.`
+            : `You're over budget on ${overBudget.length} categories: ${overBudget.map((b) => b.label).join(", ")}.`}
+        </div>
+      )}
+
       <Card>
         <div className="text-sm text-text-muted mb-1">Total balance</div>
         <StatValue className="text-3xl">{formatPKR(data.total_balance)}</StatValue>
@@ -71,6 +114,12 @@ export default function Dashboard() {
           <div>
             <div className="text-xs text-text-muted mb-1">Spent</div>
             <StatValue className="text-lg">{formatPKR(data.monthly_summary.total_out)}</StatValue>
+            {spendChangePercent !== null && (
+              <div className={`text-xs font-medium mt-0.5 ${spendChangePercent > 0 ? "text-error" : "text-brand"}`}>
+                {spendChangePercent > 0 ? "+" : ""}
+                {spendChangePercent.toFixed(0)}% vs last month
+              </div>
+            )}
           </div>
           <div>
             <div className="text-xs text-text-muted mb-1">Savings rate</div>
@@ -79,6 +128,12 @@ export default function Dashboard() {
             </StatValue>
           </div>
         </div>
+        {totalOut > 0 && (
+          <div className="mt-3 pt-3 border-t border-app-border flex justify-between text-xs text-text-muted">
+            <span>Averaging {formatPKR(dailyAvgSpend)}/day</span>
+            <span>Projected {formatPKR(projectedSpend)} by month end</span>
+          </div>
+        )}
       </Card>
 
       <Card>
