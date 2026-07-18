@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { Button } from "../components/UI";
 import Logo from "../components/Logo";
+import { useTheme } from "../context/ThemeContext";
 
 const CHART_COLORS = ["#04be99", "#2a4a6b", "#c98a1f", "#006875", "#ba1a1a"];
 
@@ -109,6 +110,7 @@ const FEATURES = [
 ];
 
 export default function Home() {
+  const { theme, toggleTheme } = useTheme();
   const spendData = useCycle(SPEND_SCENARIOS, 3000);
   const trendData = useCycle(TREND_SCENARIOS, 4000);
   const budgetData = useCycle(BUDGET_SCENARIOS, 3500);
@@ -124,6 +126,13 @@ export default function Home() {
             <span className="text-[15px] font-bold tracking-tight">HisabKitab</span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle dark mode"
+              className="w-9 h-9 rounded-full bg-surface border border-app-border flex items-center justify-center text-base shrink-0"
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
             <Link to="/login">
               <Button variant="secondary" className="!px-3 !py-1.5">
                 Sign in
@@ -273,11 +282,11 @@ export default function Home() {
       </section>
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
-        <div className="bg-navy rounded-2xl px-6 sm:px-12 py-10 sm:py-14 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-3">
+        <div className="bg-surface border border-app-border rounded-2xl px-6 sm:px-12 py-10 sm:py-14 text-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary mb-3">
             Start your hisab-kitab today
           </h2>
-          <p className="text-white/60 mb-7 max-w-md mx-auto">
+          <p className="text-text-muted mb-7 max-w-md mx-auto">
             Free to use, private to you - each account only ever sees its own data.
           </p>
           <Link to="/register">

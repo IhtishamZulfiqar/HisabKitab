@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import Logo from "./Logo";
 
 const NAV_ITEMS = [
@@ -15,9 +16,17 @@ const NAV_ITEMS = [
 
 export default function Layout() {
   const { logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-screen flex bg-app-bg text-text-primary">
+      <button
+        onClick={toggleTheme}
+        aria-label="Toggle dark mode"
+        className="sm:hidden fixed top-3 right-3 z-30 w-9 h-9 rounded-full bg-surface border border-app-border flex items-center justify-center text-base shadow-sm"
+      >
+        {theme === "dark" ? "☀️" : "🌙"}
+      </button>
       <aside className="hidden sm:flex sm:flex-col fixed inset-y-0 left-0 w-60 bg-navy border-r border-white/10 z-20">
         <div className="flex items-center gap-3 px-5 py-6 border-b border-white/10">
           <span className="w-9 h-9 rounded-md bg-brand flex items-center justify-center text-navy shrink-0">
@@ -56,7 +65,16 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="px-3 py-4 border-t border-white/10">
+        <div className="px-3 py-4 border-t border-white/10 flex flex-col gap-0.5">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-white/55 hover:text-white hover:bg-white/7 transition"
+          >
+            <span className="text-base leading-none w-5 text-center shrink-0">
+              {theme === "dark" ? "☀️" : "🌙"}
+            </span>
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </button>
           <button
             onClick={logout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-white/55 hover:text-white hover:bg-white/7 transition"

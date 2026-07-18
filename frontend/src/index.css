@@ -43,17 +43,15 @@ body {
   color: var(--color-text-primary);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-app-bg: #0b1220;
-    --color-surface: #131c2c;
-    --color-surface-2: #182238;
-    --color-app-border: #253247;
-    --color-app-border-strong: #31415c;
-    --color-text-primary: #eef2f7;
-    --color-text-secondary: #9fb0c3;
-    --color-text-muted: #6c7f96;
-  }
+.dark {
+  --color-app-bg: #0b1220;
+  --color-surface: #131c2c;
+  --color-surface-2: #182238;
+  --color-app-border: #253247;
+  --color-app-border-strong: #31415c;
+  --color-text-primary: #eef2f7;
+  --color-text-secondary: #9fb0c3;
+  --color-text-muted: #6c7f96;
 }
 
 #root {
