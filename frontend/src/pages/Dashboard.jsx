@@ -49,13 +49,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      {data.leakage.flagged && (
-        <div className="bg-warning-bg border border-warning/25 text-warning rounded-lg px-4 py-3 text-sm">
-          <strong>Leakage warning:</strong> Rs. {formatPKR(data.leakage.amount).replace("Rs. ", "")} of this
-          month's income ({formatPKR(data.leakage.total_in)}) isn't accounted for in categorized spending.
-        </div>
-      )}
-
       <Card>
         <div className="text-sm text-text-muted mb-1">Total balance</div>
         <StatValue className="text-3xl">{formatPKR(data.total_balance)}</StatValue>
@@ -67,6 +60,40 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+      </Card>
+
+      <Card>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <div className="text-xs text-text-muted mb-1">Income</div>
+            <StatValue className="text-lg">{formatPKR(data.monthly_summary.total_in)}</StatValue>
+          </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Spent</div>
+            <StatValue className="text-lg">{formatPKR(data.monthly_summary.total_out)}</StatValue>
+          </div>
+          <div>
+            <div className="text-xs text-text-muted mb-1">Savings rate</div>
+            <StatValue className="text-lg">
+              {data.monthly_summary.savings_rate === null ? "—" : `${data.monthly_summary.savings_rate.toFixed(0)}%`}
+            </StatValue>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-sm font-semibold mb-3">Income vs spend (last 6 months)</h2>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data.monthly_trend} margin={{ left: 0, right: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-app-border)" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
+            <YAxis tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} width={40} />
+            <Tooltip {...chartTooltipStyle} formatter={(v) => formatPKR(v)} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey="income" name="Income" fill="#04be99" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="spend" name="Spend" fill="#ba1a1a" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </Card>
 
       <Card>

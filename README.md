@@ -11,7 +11,7 @@ ever sees their own wallets, transactions, budgets and goals.
 ## Features
 
 - **Dashboard:** total balance, this month's spend by category, active budgets and goals,
-  friend balances, and an income vs. categorized-spend "leakage" check
+  friend balances, a savings rate summary, and a 6-month income vs. spend trend chart
 - **Wallets:** track balances across bank, mobile wallet and cash accounts, with wallet-to-wallet
   transfers
 - **Transactions:** log income/expenses, filter by wallet, category, friend and date range
@@ -111,5 +111,6 @@ users sign up through the app's own Register page instead.
   every write/delete.
 - Wallet-to-wallet transfers, goal contributions/withdrawals, and their paired transactions are
   created and deleted atomically, so wallet balances stay consistent.
-- The dashboard's "leakage" figure flags when categorized spending is materially behind income
-  for the month (>10% unaccounted for), so uncategorized cash drift gets surfaced early.
+- The dashboard shows a savings rate (income minus spend, as a percent of income) and a 6-month
+  income vs. spend trend chart, so cash flow patterns are visible at a glance instead of relying
+  on a single threshold-based warning.

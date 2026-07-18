@@ -1,6 +1,8 @@
+from datetime import date
 from decimal import Decimal
 
 from django.db.models import Q, Sum
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -300,14 +302,45 @@ class DashboardView(APIView):
             direction=Transaction.Direction.IN, transfer_to_wallet__isnull=True
         ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
-        total_categorized_out = month_transactions.filter(
+        total_out = month_transactions.filter(
             direction=Transaction.Direction.OUT, transfer_to_wallet__isnull=True
         ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
-        leakage = total_in - total_categorized_out
-        leakage_flag = False
-        if total_in > 0 and leakage > (total_in * Decimal("0.10")):
-            leakage_flag = True
+        savings_rate = None
+        if total_in > 0:
+            savings_rate = float((total_in - total_out) / total_in * 100)
+
+        earliest_month = _shift_month(month_start, -5)
+        trend_rows = (
+            Transaction.objects.filter(
+                user=request.user,
+                date__gte=earliest_month,
+                date__lt=next_month_start,
+                transfer_to_wallet__isnull=True,
+            )
+            .annotate(month=TruncMonth("date"))
+            .values("month", "direction")
+            .annotate(total=Sum("amount"))
+        )
+        trend_by_month = {}
+        for row in trend_rows:
+            bucket = trend_by_month.setdefault(row["month"], {"income": Decimal("0"), "spend": Decimal("0")})
+            if row["direction"] == Transaction.Direction.IN:
+                bucket["income"] = row["total"]
+            else:
+                bucket["spend"] = row["total"]
+
+        monthly_trend = []
+        for i in range(6):
+            m = _shift_month(earliest_month, i)
+            bucket = trend_by_month.get(m, {"income": Decimal("0"), "spend": Decimal("0")})
+            monthly_trend.append(
+                {
+                    "month": m.strftime("%b %Y"),
+                    "income": bucket["income"],
+                    "spend": bucket["spend"],
+                }
+            )
 
         return Response(
             {
@@ -317,11 +350,17 @@ class DashboardView(APIView):
                 "budgets": budgets_data,
                 "goals": goals_data,
                 "friends": friends_data,
-                "leakage": {
+                "monthly_summary": {
                     "total_in": total_in,
-                    "total_categorized_out": total_categorized_out,
-                    "amount": leakage,
-                    "flagged": leakage_flag,
+                    "total_out": total_out,
+                    "savings_rate": savings_rate,
                 },
+                "monthly_trend": monthly_trend,
             }
         )
+
+
+def _shift_month(d, n):
+    total = d.year * 12 + (d.month - 1) + n
+    year, month = divmod(total, 12)
+    return date(year, month + 1, 1)
