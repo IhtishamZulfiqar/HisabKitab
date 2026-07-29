@@ -268,6 +268,7 @@ class DashboardView(APIView):
             month_transactions.filter(
                 direction=Transaction.Direction.OUT, transfer_to_wallet__isnull=True, friend__isnull=True
             )
+            .exclude(category__is_goal_related=True)
             .values("category__id", "category__name")
             .annotate(total=Sum("amount"))
             .order_by("-total")
@@ -305,14 +306,14 @@ class DashboardView(APIView):
             transfer_to_wallet__isnull=True,
             paired_transaction__isnull=True,
             friend__isnull=True,
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        ).exclude(category__is_goal_related=True).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         total_out = month_transactions.filter(
             direction=Transaction.Direction.OUT,
             transfer_to_wallet__isnull=True,
             paired_transaction__isnull=True,
             friend__isnull=True,
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        ).exclude(category__is_goal_related=True).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
         savings_rate = None
         if total_in > 0:
@@ -328,6 +329,7 @@ class DashboardView(APIView):
                 paired_transaction__isnull=True,
                 friend__isnull=True,
             )
+            .exclude(category__is_goal_related=True)
             .annotate(month=TruncMonth("date"))
             .values("month", "direction")
             .annotate(total=Sum("amount"))
