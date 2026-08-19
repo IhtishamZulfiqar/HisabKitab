@@ -6,6 +6,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -149,6 +151,37 @@ export default function Dashboard() {
             <Bar dataKey="spend" name="Spend" fill="#ba1a1a" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+      </Card>
+
+      <Card>
+        <h2 className="text-sm font-semibold mb-3">Day-to-day expenses (last 3 months)</h2>
+        {data.daily_expense_trend.data.every((point) =>
+          data.daily_expense_trend.months.every((label) => !point[label])
+        ) ? (
+          <EmptyState message="No expenses recorded yet." />
+        ) : (
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={data.daily_expense_trend.data} margin={{ left: 0, right: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-app-border)" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
+              <YAxis tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} width={40} />
+              <Tooltip {...chartTooltipStyle} formatter={(v) => (v == null ? "—" : formatPKR(v))} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              {data.daily_expense_trend.months.map((label, i) => (
+                <Line
+                  key={label}
+                  type="monotone"
+                  dataKey={label}
+                  name={label}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </Card>
 
       <Card>

@@ -354,6 +354,35 @@ class DashboardView(APIView):
                 }
             )
 
+        daily_expense_months = [_shift_month(month_start, -2), _shift_month(month_start, -1), month_start]
+        daily_rows = (
+            Transaction.objects.filter(
+                user=request.user,
+                date__gte=daily_expense_months[0],
+                date__lt=next_month_start,
+                direction=Transaction.Direction.OUT,
+                transfer_to_wallet__isnull=True,
+                paired_transaction__isnull=True,
+                friend__isnull=True,
+            )
+            .exclude(category__is_goal_related=True)
+            .values("date")
+            .annotate(total=Sum("amount"))
+        )
+        daily_totals = {row["date"]: row["total"] for row in daily_rows}
+
+        month_labels = [m.strftime("%b %Y") for m in daily_expense_months]
+        max_day = max(_days_in_month(m) for m in daily_expense_months)
+        daily_expense_trend = []
+        for day in range(1, max_day + 1):
+            point = {"day": day}
+            for m, label in zip(daily_expense_months, month_labels):
+                if day <= _days_in_month(m):
+                    point[label] = daily_totals.get(m.replace(day=day), Decimal("0"))
+                else:
+                    point[label] = None
+            daily_expense_trend.append(point)
+
         return Response(
             {
                 "wallets": wallet_data,
@@ -368,6 +397,10 @@ class DashboardView(APIView):
                     "savings_rate": savings_rate,
                 },
                 "monthly_trend": monthly_trend,
+                "daily_expense_trend": {
+                    "months": month_labels,
+                    "data": daily_expense_trend,
+                },
             }
         )
 
@@ -376,3 +409,8 @@ def _shift_month(d, n):
     total = d.year * 12 + (d.month - 1) + n
     year, month = divmod(total, 12)
     return date(year, month + 1, 1)
+
+
+def _days_in_month(d):
+    next_month = _shift_month(d, 1)
+    return (next_month - d).days
