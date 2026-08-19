@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
-import { Button, Card, ErrorBanner, Loading } from "../components/UI";
+import { Button, Card, ErrorBanner, InfoBanner, Loading } from "../components/UI";
+import { useSync } from "../context/SyncContext";
+import { cacheReferenceData, getCachedReferenceData, queueTransaction } from "../utils/offlineStore";
 
 const TYPE_TO_DIRECTION = { expense: "OUT", income: "IN", transfer: "TRANSFER" };
 
 export default function QuickAdd() {
   const [searchParams] = useSearchParams();
+  const { isOnline, refreshCount } = useSync();
   const [wallets, setWallets] = useState([]);
   const [friends, setFriends] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [offlineNotice, setOfflineNotice] = useState("");
   const [success, setSuccess] = useState(false);
+  const [savedOffline, setSavedOffline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [wallet, setWallet] = useState("");
@@ -29,9 +34,23 @@ export default function QuickAdd() {
         setWallets(w);
         setFriends(f);
         setCategories(c);
+        cacheReferenceData("wallets", w);
+        cacheReferenceData("friends", f);
+        cacheReferenceData("categories", c);
         if (w.length) setWallet(String(w[0].id));
       })
-      .catch((e) => setError(e.message))
+      .catch((e) => {
+        const cachedWallets = getCachedReferenceData("wallets");
+        if (cachedWallets) {
+          setWallets(cachedWallets);
+          setFriends(getCachedReferenceData("friends") || []);
+          setCategories(getCachedReferenceData("categories") || []);
+          if (cachedWallets.length) setWallet(String(cachedWallets[0].id));
+          setOfflineNotice("You're offline — showing last saved wallets and categories.");
+        } else {
+          setError(e.message);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -56,37 +75,50 @@ export default function QuickAdd() {
       return;
     }
     setSubmitting(true);
-    try {
-      if (isTransfer) {
-        await api.post("/transactions/", {
+
+    const endpoint = isTransfer ? "/transactions/" : "/transactions/quick-add/";
+    const payload = isTransfer
+      ? {
           wallet: Number(wallet),
           amount,
           direction: "OUT",
           transfer_to_wallet: Number(toWallet),
           note: note || undefined,
-        });
-      } else {
-        await api.post("/transactions/quick-add/", {
+        }
+      : {
           wallet: Number(wallet),
           amount,
           direction,
           category: category || undefined,
           friend: needsFriend && friend ? Number(friend) : undefined,
           note: note || undefined,
-        });
-      }
+        };
+
+    try {
+      await api.post(endpoint, payload);
       setSuccess(true);
-      setAmount("");
-      setCategory("");
-      setNote("");
-      setFriend("");
-      setToWallet("");
-      setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
+      if (!isOnline || err instanceof TypeError) {
+        queueTransaction(endpoint, payload);
+        refreshCount();
+        setSavedOffline(true);
+      } else {
+        setError(err.message);
+        setSubmitting(false);
+        return;
+      }
     }
+
+    setAmount("");
+    setCategory("");
+    setNote("");
+    setFriend("");
+    setToWallet("");
+    setSubmitting(false);
+    setTimeout(() => {
+      setSuccess(false);
+      setSavedOffline(false);
+    }, 2500);
   }
 
   if (loading) return <Loading label="Loading..." />;
@@ -95,10 +127,14 @@ export default function QuickAdd() {
     <div className="max-w-md mx-auto">
       <h1 className="text-lg font-semibold mb-4">Quick Add</h1>
       <ErrorBanner message={error} />
+      <InfoBanner message={offlineNotice} />
       {success && (
         <div className="bg-success-bg border border-brand/30 text-success-text text-sm rounded-lg px-3 py-2 mb-3">
           Transaction added.
         </div>
+      )}
+      {savedOffline && (
+        <InfoBanner message="You're offline — saved locally, will sync automatically when back online." />
       )}
 
       <Card>

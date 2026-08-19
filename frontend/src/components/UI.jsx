@@ -36,6 +36,15 @@ export function ErrorBanner({ message }) {
   );
 }
 
+export function InfoBanner({ message }) {
+  if (!message) return null;
+  return (
+    <div className="bg-warning-bg border border-warning/20 text-warning text-sm font-medium rounded-lg px-3 py-2 mb-3">
+      {message}
+    </div>
+  );
+}
+
 export function Button({ children, variant = "primary", className = "", ...props }) {
   const variants = {
     primary: "bg-brand hover:bg-brand-hover text-navy",
