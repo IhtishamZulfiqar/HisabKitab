@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Card, Loading, ErrorBanner, EmptyState, Button } from "../components/UI";
 
-const emptyForm = { name: "", is_friend_related: false, is_goal_related: false };
+const emptyForm = { name: "", parent: "", is_friend_related: false, is_goal_related: false };
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -32,7 +32,12 @@ export default function Categories() {
   }
 
   function startEdit(c) {
-    setForm({ name: c.name, is_friend_related: c.is_friend_related, is_goal_related: c.is_goal_related });
+    setForm({
+      name: c.name,
+      parent: c.parent ?? "",
+      is_friend_related: c.is_friend_related,
+      is_goal_related: c.is_goal_related,
+    });
     setEditingId(c.id);
     setShowForm(true);
   }
@@ -43,10 +48,11 @@ export default function Categories() {
     setSubmitting(true);
     setError("");
     try {
+      const payload = { ...form, parent: form.parent || null };
       if (editingId) {
-        await api.patch(`/categories/${editingId}/`, form);
+        await api.patch(`/categories/${editingId}/`, payload);
       } else {
-        await api.post("/categories/", form);
+        await api.post("/categories/", payload);
       }
       setShowForm(false);
       load();
@@ -86,6 +92,20 @@ export default function Categories() {
               required
               autoFocus
             />
+            <select
+              className="w-full px-3 py-2 text-sm rounded-lg border border-app-border bg-transparent"
+              value={form.parent}
+              onChange={(e) => setForm({ ...form, parent: e.target.value })}
+            >
+              <option value="">No parent (top-level category)</option>
+              {categories
+                .filter((c) => !c.parent && c.id !== editingId)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -120,60 +140,86 @@ export default function Categories() {
         <EmptyState message="No categories yet." />
       ) : (
         <div className="space-y-2">
-          {categories.map((c) => (
-            <Card key={c.id} className="!p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-medium text-sm truncate">{c.name}</div>
-                  <div className="flex gap-1.5 mt-1">
-                    {c.is_friend_related && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-brand-dim text-brand">
-                        Friend
-                      </span>
-                    )}
-                    {c.is_goal_related && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-warning-bg text-warning">
-                        Goal
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => startEdit(c)}
-                    className="text-xs px-2 py-1 rounded-md text-text-muted hover:bg-surface-2"
-                  >
-                    Edit
-                  </button>
-                  {confirmDeleteId === c.id ? (
-                    <>
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="text-xs px-2 py-1 rounded-md text-white bg-error"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="text-xs px-2 py-1 rounded-md text-text-muted hover:bg-surface-2"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteId(c.id)}
-                      className="text-xs px-2 py-1 rounded-md text-error hover:bg-error-bg"
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
+          {categories
+            .filter((c) => !c.parent)
+            .map((c) => (
+              <div key={c.id} className="space-y-2">
+                <CategoryRow
+                  category={c}
+                  onEdit={startEdit}
+                  onDelete={handleDelete}
+                  confirmDeleteId={confirmDeleteId}
+                  setConfirmDeleteId={setConfirmDeleteId}
+                />
+                {categories
+                  .filter((sub) => sub.parent === c.id)
+                  .map((sub) => (
+                    <div key={sub.id} className="ml-4 pl-3 border-l-2 border-app-border">
+                      <CategoryRow
+                        category={sub}
+                        onEdit={startEdit}
+                        onDelete={handleDelete}
+                        confirmDeleteId={confirmDeleteId}
+                        setConfirmDeleteId={setConfirmDeleteId}
+                      />
+                    </div>
+                  ))}
               </div>
-            </Card>
-          ))}
+            ))}
         </div>
       )}
     </div>
+  );
+}
+
+function CategoryRow({ category: c, onEdit, onDelete, confirmDeleteId, setConfirmDeleteId }) {
+  return (
+    <Card className="!p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-medium text-sm truncate">{c.name}</div>
+          <div className="flex gap-1.5 mt-1">
+            {c.is_friend_related && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-brand-dim text-brand">
+                Friend
+              </span>
+            )}
+            {c.is_goal_related && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-warning-bg text-warning">
+                Goal
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          <button
+            onClick={() => onEdit(c)}
+            className="text-xs px-2 py-1 rounded-md text-text-muted hover:bg-surface-2"
+          >
+            Edit
+          </button>
+          {confirmDeleteId === c.id ? (
+            <>
+              <button onClick={() => onDelete(c.id)} className="text-xs px-2 py-1 rounded-md text-white bg-error">
+                Confirm
+              </button>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="text-xs px-2 py-1 rounded-md text-text-muted hover:bg-surface-2"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmDeleteId(c.id)}
+              className="text-xs px-2 py-1 rounded-md text-error hover:bg-error-bg"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }

@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.db.models import Q, Sum
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
@@ -54,7 +54,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
 
     def get_queryset(self):
-        return super().get_queryset().filter(user=self.request.user)
+        return super().get_queryset().filter(user=self.request.user).select_related("parent")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -269,14 +269,18 @@ class DashboardView(APIView):
                 direction=Transaction.Direction.OUT, transfer_to_wallet__isnull=True, friend__isnull=True
             )
             .exclude(category__is_goal_related=True)
-            .values("category__id", "category__name")
+            .annotate(
+                effective_id=Coalesce("category__parent__id", "category__id"),
+                effective_name=Coalesce("category__parent__name", "category__name"),
+            )
+            .values("effective_id", "effective_name")
             .annotate(total=Sum("amount"))
             .order_by("-total")
         )
         spend_by_category_data = [
             {
-                "category_id": row["category__id"],
-                "category_name": row["category__name"] or "Uncategorized",
+                "category_id": row["effective_id"],
+                "category_name": row["effective_name"] or "Uncategorized",
                 "total": row["total"],
             }
             for row in spend_by_category

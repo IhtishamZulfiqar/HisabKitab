@@ -23,3 +23,16 @@ export function currentMonthStart() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
+
+export function categoriesForSelect(categories) {
+  const options = [];
+  categories
+    .filter((c) => !c.parent)
+    .forEach((parent) => {
+      options.push({ id: parent.id, label: parent.name });
+      categories
+        .filter((c) => c.parent === parent.id)
+        .forEach((child) => options.push({ id: child.id, label: `— ${child.name}` }));
+    });
+  return options;
+}

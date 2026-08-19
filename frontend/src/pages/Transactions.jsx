@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Card, Loading, ErrorBanner, EmptyState, Button } from "../components/UI";
-import { formatPKR, formatDate } from "../utils/format";
+import { formatPKR, formatDate, categoriesForSelect } from "../utils/format";
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -108,9 +108,9 @@ export default function Transactions() {
               onChange={(e) => setFilters({ ...filters, category: e.target.value })}
             >
               <option value="">All</option>
-              {categories.map((c) => (
+              {categoriesForSelect(categories).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.label}
                 </option>
               ))}
             </select>

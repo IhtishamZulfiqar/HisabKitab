@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, Button } from "../components/UI";
-import { formatPKR, currentMonthStart } from "../utils/format";
+import { formatPKR, currentMonthStart, categoriesForSelect } from "../utils/format";
 
 const emptyForm = { label: "", category: "", amount: "", month: currentMonthStart() };
 
@@ -98,9 +98,9 @@ export default function Budgets() {
               required
             >
               <option value="">Select category</option>
-              {categories.map((c) => (
+              {categoriesForSelect(categories).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.label}
                 </option>
               ))}
             </select>

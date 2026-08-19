@@ -36,9 +36,20 @@ class WalletSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    parent_name = serializers.CharField(source="parent.name", read_only=True, default=None)
+
     class Meta:
         model = Category
-        fields = ["id", "name", "is_friend_related", "is_goal_related"]
+        fields = ["id", "name", "parent", "parent_name", "is_friend_related", "is_goal_related"]
+
+    def validate_parent(self, value):
+        if value is None:
+            return value
+        if self.instance and value.pk == self.instance.pk:
+            raise serializers.ValidationError("A category cannot be its own parent.")
+        if value.parent_id:
+            raise serializers.ValidationError("Sub-categories can only be one level deep.")
+        return value
 
 
 class FriendSerializer(serializers.ModelSerializer):

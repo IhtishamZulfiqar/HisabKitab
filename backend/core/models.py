@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction as db_transaction
 from django.utils import timezone
@@ -35,6 +36,9 @@ class Wallet(models.Model):
 class Category(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="categories")
     name = models.CharField(max_length=100)
+    parent = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="subcategories"
+    )
     is_friend_related = models.BooleanField(default=False)
     is_goal_related = models.BooleanField(default=False)
 
@@ -45,6 +49,12 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.parent_id and self.parent_id == self.pk:
+            raise ValidationError("A category cannot be its own parent.")
+        if self.parent_id and self.parent and self.parent.parent_id:
+            raise ValidationError("Sub-categories can only be one level deep.")
 
 
 class Friend(models.Model):
