@@ -1,8 +1,10 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Budget, Category, Friend, Goal, GoalTransaction, Transaction, Wallet
+from .models import Budget, Category, Friend, Goal, GoalTransaction, StockTrade, Transaction, Wallet
 
 User = get_user_model()
 
@@ -177,3 +179,22 @@ class GoalSerializer(serializers.ModelSerializer):
             "percent_complete",
             "suggested_monthly_contribution",
         ]
+
+
+class StockTradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StockTrade
+        fields = ["id", "symbol", "quantity", "price", "date", "created_at"]
+        read_only_fields = ["created_at"]
+
+    def validate_symbol(self, value):
+        # the symbol ends up in a PSX URL, so keep it strictly alphanumeric
+        value = value.strip().upper()
+        if not re.fullmatch(r"[A-Z0-9]{1,10}", value):
+            raise serializers.ValidationError("Enter a PSX symbol like LUCK or OGDC.")
+        return value
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be positive.")
+        return value

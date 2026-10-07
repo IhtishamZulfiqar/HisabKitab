@@ -337,3 +337,20 @@ class GoalTransaction(models.Model):
             super().delete(*args, **kwargs)
             if linked_tx:
                 linked_tx.delete()
+
+
+class StockTrade(models.Model):
+    """A share purchase. Kept apart from wallets/transactions so it never touches balances."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="stock_trades")
+    symbol = models.CharField(max_length=10)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    price = models.DecimalField(max_digits=12, decimal_places=2, help_text="Buy rate per share")
+    date = models.DateField(default=timezone.localdate)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.quantity} {self.symbol} @ {self.price}"

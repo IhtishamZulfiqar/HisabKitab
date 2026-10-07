@@ -34,6 +34,15 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [investments, setInvestments] = useState(null);
+
+  useEffect(() => {
+    // separate call: live prices are slow and must never block or break the dashboard
+    api
+      .get("/investments/")
+      .then(setInvestments)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     api
@@ -106,6 +115,30 @@ export default function Dashboard() {
           ))}
         </div>
       </Card>
+
+      {investments && investments.holdings.length > 0 && (
+        <Link to="/investments" className="block">
+          <Card className="hover:border-brand">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="text-sm text-text-muted mb-1">Investments (estimated)</div>
+                <StatValue className="text-2xl">{formatPKR(investments.current_value)}</StatValue>
+              </div>
+              <div className="text-right text-sm">
+                <div
+                  className={`font-mono font-semibold ${
+                    Number(investments.profit_loss) >= 0 ? "text-brand" : "text-error"
+                  }`}
+                >
+                  {Number(investments.profit_loss) >= 0 ? "+" : ""}
+                  {formatPKR(investments.profit_loss)}
+                </div>
+                <div className="text-xs text-text-muted">on {formatPKR(investments.total_invested)}</div>
+              </div>
+            </div>
+          </Card>
+        </Link>
+      )}
 
       <Card>
         <div className="grid grid-cols-3 gap-2 text-center">

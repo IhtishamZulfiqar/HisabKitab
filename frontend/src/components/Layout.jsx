@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: "/budgets", label: "Budgets", icon: "🎯" },
   { to: "/goals", label: "Goals", icon: "🏆" },
   { to: "/wallets", label: "Wallets", icon: "👛" },
+  { to: "/investments", label: "Investments", icon: "📈" },
   { to: "/categories", label: "Categories", icon: "🏷️" },
 ];
 

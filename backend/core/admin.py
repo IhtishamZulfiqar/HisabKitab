@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Budget, Category, Friend, Goal, GoalTransaction, Transaction, Wallet
+from .models import Budget, Category, Friend, Goal, GoalTransaction, StockTrade, Transaction, Wallet
 
 
 class UserOwnedAdmin(admin.ModelAdmin):
@@ -44,3 +44,4 @@ admin.site.register(Transaction, UserOwnedAdmin)
 admin.site.register(Budget, UserOwnedAdmin)
 admin.site.register(Goal, UserOwnedAdmin)
 admin.site.register(GoalTransaction, UserOwnedAdmin)
+admin.site.register(StockTrade, UserOwnedAdmin)
