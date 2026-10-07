@@ -18,6 +18,7 @@ import {
 import { api } from "../api/client";
 import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, StatValue, BudgetDailyAverages } from "../components/UI";
 import { formatPKR } from "../utils/format";
+import { matchDays } from "../utils/dayMatch";
 
 const CHART_COLORS = ["#199e70", "#3987e5", "#d95926", "#9085e9", "#c98500", "#d55181", "#008300"];
 
@@ -29,6 +30,85 @@ const chartTooltipStyle = {
     fontSize: 12,
   },
 };
+
+const chipClass = "rounded-md px-2 py-1 text-xs font-mono border";
+
+function BeatLastMonth({ trend, dayOfMonth }) {
+  const [, lastLabel, thisLabel] = trend.months;
+  const lastMonth = trend.data
+    .filter((p) => p[lastLabel] != null)
+    .map((p) => ({ day: p.day, amount: Number(p[lastLabel]) }));
+  if (!lastMonth.some((d) => d.amount > 0)) return null;
+
+  const thisMonth = trend.data.map((p) => ({ day: p.day, amount: Number(p[thisLabel] ?? 0) }));
+  // today is still open, so it only counts once the day is over
+  const { pairs, failed, remaining } = matchDays(
+    lastMonth,
+    thisMonth.filter((d) => d.day < dayOfMonth)
+  );
+  const saved = pairs.reduce((sum, p) => sum + p.target.amount - p.day.amount, 0);
+  const todaySpend = thisMonth.find((d) => d.day === dayOfMonth)?.amount ?? 0;
+  const todayTarget = remaining.find((t) => t.amount >= todaySpend);
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold">Beat last month, day by day</h2>
+        <span className="text-xs text-text-muted">
+          {pairs.length}/{lastMonth.length} cut · {formatPKR(saved)} saved
+        </span>
+      </div>
+
+      {remaining.length > 0 && (
+        <div className={`text-xs rounded-lg px-3 py-2 mb-3 ${todayTarget ? "bg-surface-2" : "bg-error-bg text-error"}`}>
+          Today so far {formatPKR(todaySpend)} —{" "}
+          {todayTarget
+            ? `cuts ${formatPKR(todayTarget.amount)}. Stay under ${formatPKR(remaining.at(-1).amount)} to cut a day.`
+            : "over every target left."}
+        </div>
+      )}
+
+      <div className="text-xs text-text-muted mb-1">Targets left ({remaining.length})</div>
+      <div className="flex flex-wrap gap-1 mb-3">
+        {remaining.map((t) => (
+          <span key={t.day} className={`${chipClass} bg-surface-2 border-app-border`} title={`${lastLabel}, day ${t.day}`}>
+            {formatPKR(t.amount)}
+          </span>
+        ))}
+      </div>
+
+      {pairs.length > 0 && (
+        <>
+          <div className="text-xs text-text-muted mb-1">Cut ({pairs.length})</div>
+          <div className="flex flex-wrap gap-1 mb-3">
+            {pairs.map((p) => (
+              <span
+                key={p.target.day}
+                className={`${chipClass} border-brand/30 text-brand`}
+                title={`Day ${p.day.day} cut ${lastLabel} day ${p.target.day}`}
+              >
+                <s className="text-text-muted">{formatPKR(p.target.amount)}</s> {formatPKR(p.day.amount)}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+
+      {failed.length > 0 && (
+        <>
+          <div className="text-xs text-text-muted mb-1">Missed ({failed.length})</div>
+          <div className="flex flex-wrap gap-1">
+            {failed.map((d) => (
+              <span key={d.day} className={`${chipClass} bg-error-bg border-error/20 text-error`} title={`Day ${d.day}`}>
+                {formatPKR(d.amount)}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -214,6 +294,8 @@ export default function Dashboard() {
           </ResponsiveContainer>
         )}
       </Card>
+
+      <BeatLastMonth trend={data.daily_expense_trend} dayOfMonth={dayOfMonth} />
 
       <Card>
         <h2 className="text-sm font-semibold mb-3">This month's spend by category</h2>
