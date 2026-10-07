@@ -12,6 +12,7 @@ import Budgets from "./pages/Budgets";
 import Goals from "./pages/Goals";
 import Wallets from "./pages/Wallets";
 import Categories from "./pages/Categories";
+import Investments from "./pages/Investments";
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAuth();
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="/wallets" element={<Wallets />} />
         <Route path="/wallets/:id" element={<Wallets />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/investments" element={<Investments />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

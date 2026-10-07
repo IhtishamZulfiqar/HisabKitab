@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from decimal import Decimal
 
@@ -11,7 +12,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Budget, Category, Friend, Goal, GoalTransaction, Transaction, Wallet
+from .models import Budget, Category, Friend, Goal, GoalTransaction, StockTrade, Transaction, Wallet
+from .psx import get_price, get_symbols
 from .serializers import (
     BudgetSerializer,
     CategorySerializer,
@@ -19,6 +21,7 @@ from .serializers import (
     GoalSerializer,
     GoalTransactionSerializer,
     RegisterSerializer,
+    StockTradeSerializer,
     TransactionSerializer,
     WalletSerializer,
 )
@@ -245,6 +248,58 @@ class GoalTransactionViewSet(viewsets.ModelViewSet):
         if goal:
             qs = qs.filter(goal_id=goal)
         return qs
+
+
+class StockTradeViewSet(viewsets.ModelViewSet):
+    queryset = StockTrade.objects.all()
+    serializer_class = StockTradeSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+def summarize_holdings(trades, prices):
+    """trades: (symbol, quantity, buy_price) tuples; prices: {symbol: live price or None}."""
+    holdings = {}
+    for symbol, quantity, price in trades:
+        h = holdings.setdefault(symbol, {"symbol": symbol, "quantity": 0, "invested": Decimal("0")})
+        h["quantity"] += quantity
+        h["invested"] += quantity * price
+
+    for h in holdings.values():
+        price = prices.get(h["symbol"])
+        h["avg_price"] = round(h["invested"] / h["quantity"], 2)
+        h["current_price"] = price
+        # no live price: value the holding at cost so the totals aren't understated
+        h["current_value"] = h["quantity"] * price if price is not None else h["invested"]
+        h["profit_loss"] = h["current_value"] - h["invested"]
+
+    rows = sorted(holdings.values(), key=lambda h: h["symbol"])
+    total_invested = sum((h["invested"] for h in rows), Decimal("0"))
+    current_value = sum((h["current_value"] for h in rows), Decimal("0"))
+    return {
+        "holdings": rows,
+        "total_invested": total_invested,
+        "current_value": current_value,
+        "profit_loss": current_value - total_invested,
+    }
+
+
+class InvestmentsView(APIView):
+    def get(self, request):
+        trades = list(StockTrade.objects.filter(user=request.user).values_list("symbol", "quantity", "price"))
+        symbols = sorted({t[0] for t in trades})
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            prices = dict(zip(symbols, pool.map(get_price, symbols)))
+        return Response(summarize_holdings(trades, prices))
+
+
+class StockSymbolsView(APIView):
+    def get(self, request):
+        return Response(get_symbols())
 
 
 class DashboardView(APIView):
