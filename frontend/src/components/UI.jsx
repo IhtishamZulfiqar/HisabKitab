@@ -1,3 +1,5 @@
+import { formatPKR } from "../utils/format";
+
 export function Card({ children, className = "", ...props }) {
   return (
     <div
@@ -19,6 +21,18 @@ export function ProgressBar({ percent }) {
   return (
     <div className="w-full h-2 bg-surface-2 rounded-full overflow-hidden">
       <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+export function BudgetDailyAverages({ budget: b }) {
+  const perDay = (v) => (v == null ? "—" : `${formatPKR(v)}/day`);
+  return (
+    <div className="flex justify-between text-xs text-text-muted mt-1">
+      <span>
+        Avg spent {perDay(b.avg_spent_per_day)} ({b.days_used} of {b.total_days} days)
+      </span>
+      <span>Can spend {perDay(b.remaining_per_day)}</span>
     </div>
   );
 }

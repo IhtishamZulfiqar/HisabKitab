@@ -1,7 +1,9 @@
+import calendar
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db import transaction as db_transaction
 from django.utils import timezone
@@ -155,6 +157,12 @@ class Budget(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="budgets")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     month = models.DateField(help_text="Stored as the first day of the budget's month")
+    days = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        help_text="Days the budget has to cover (e.g. 22 working days). Blank means the full month.",
+    )
 
     class Meta:
         ordering = ["-month"]
@@ -187,6 +195,36 @@ class Budget(models.Model):
         if self.amount == 0:
             return Decimal("0")
         return round((self.spent_amount / self.amount) * 100, 2)
+
+    @property
+    def total_days(self):
+        month_days = calendar.monthrange(self.month.year, self.month.month)[1]
+        return min(self.days or month_days, month_days)
+
+    @property
+    def days_used(self):
+        # ponytail: budget days are assumed evenly spread over the month (22 days, 7/31 of
+        # the month gone -> 5 used). Store actual weekdays/holidays if this gets too rough.
+        today = timezone.localdate()
+        month_days = calendar.monthrange(self.month.year, self.month.month)[1]
+        if today < self.month:
+            return 0
+        if (today.year, today.month) != (self.month.year, self.month.month):
+            return self.total_days
+        return round(self.total_days * today.day / month_days)
+
+    @property
+    def avg_spent_per_day(self):
+        if not self.days_used:
+            return None
+        return round(self.spent_amount / self.days_used, 2)
+
+    @property
+    def remaining_per_day(self):
+        days_left = self.total_days - self.days_used
+        if not days_left:
+            return None
+        return round(self.remaining_amount / days_left, 2)
 
 
 class Goal(models.Model):

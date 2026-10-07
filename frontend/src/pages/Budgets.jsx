@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, Button } from "../components/UI";
+import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, Button, BudgetDailyAverages } from "../components/UI";
 import { formatPKR, currentMonthStart, categoriesForSelect } from "../utils/format";
 
-const emptyForm = { label: "", category: "", amount: "", month: currentMonthStart() };
+const emptyForm = { label: "", category: "", amount: "", month: currentMonthStart(), days: "" };
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState([]);
@@ -35,7 +35,7 @@ export default function Budgets() {
   }
 
   function startEdit(b) {
-    setForm({ label: b.label, category: String(b.category), amount: b.amount, month: b.month });
+    setForm({ label: b.label, category: String(b.category), amount: b.amount, month: b.month, days: b.days ?? "" });
     setEditingId(b.id);
     setShowForm(true);
   }
@@ -49,6 +49,7 @@ export default function Budgets() {
         category: Number(form.category),
         amount: form.amount,
         month: form.month,
+        days: form.days === "" ? null : Number(form.days),
       };
       if (editingId) {
         await api.patch(`/budgets/${editingId}/`, payload);
@@ -120,6 +121,15 @@ export default function Budgets() {
               onChange={(e) => setForm({ ...form, month: e.target.value })}
               required
             />
+            <input
+              type="number"
+              min="1"
+              max="31"
+              placeholder="Days this budget covers (e.g. 22 working days) — blank = full month"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-app-border bg-transparent"
+              value={form.days}
+              onChange={(e) => setForm({ ...form, days: e.target.value })}
+            />
             <div className="flex gap-2">
               <Button type="submit" disabled={submitting}>
                 {editingId ? "Save" : "Create"}
@@ -161,6 +171,7 @@ export default function Budgets() {
                 </span>
                 <span>{formatPKR(b.remaining_amount)} left</span>
               </div>
+              <BudgetDailyAverages budget={b} />
             </Card>
           ))}
         </div>

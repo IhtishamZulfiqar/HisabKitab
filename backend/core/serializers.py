@@ -109,6 +109,10 @@ class BudgetSerializer(serializers.ModelSerializer):
     spent_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     remaining_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     percent_used = serializers.DecimalField(max_digits=6, decimal_places=2, read_only=True)
+    total_days = serializers.IntegerField(read_only=True)
+    days_used = serializers.IntegerField(read_only=True)
+    avg_spent_per_day = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    remaining_per_day = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
 
     class Meta:
         model = Budget
@@ -119,9 +123,14 @@ class BudgetSerializer(serializers.ModelSerializer):
             "category_name",
             "amount",
             "month",
+            "days",
             "spent_amount",
             "remaining_amount",
             "percent_used",
+            "total_days",
+            "days_used",
+            "avg_spent_per_day",
+            "remaining_per_day",
         ]
 
 

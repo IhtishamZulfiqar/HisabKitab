@@ -16,10 +16,10 @@ import {
   YAxis,
 } from "recharts";
 import { api } from "../api/client";
-import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, StatValue } from "../components/UI";
+import { Card, ProgressBar, Loading, ErrorBanner, EmptyState, StatValue, BudgetDailyAverages } from "../components/UI";
 import { formatPKR } from "../utils/format";
 
-const CHART_COLORS = ["#04be99", "#2a4a6b", "#c98a1f", "#006875", "#ba1a1a", "#7a4100", "#03a886"];
+const CHART_COLORS = ["#199e70", "#3987e5", "#d95926", "#9085e9", "#c98500", "#d55181", "#008300"];
 
 const chartTooltipStyle = {
   contentStyle: {
@@ -139,15 +139,13 @@ export default function Dashboard() {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold mb-3">Income vs spend (last 6 months)</h2>
+        <h2 className="text-sm font-semibold mb-3">Expenses (last 6 months)</h2>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data.monthly_trend} margin={{ left: 0, right: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-app-border)" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} />
             <YAxis tick={{ fontSize: 11, fill: "var(--color-text-muted)" }} width={40} />
             <Tooltip {...chartTooltipStyle} formatter={(v) => formatPKR(v)} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="income" name="Income" fill="#04be99" radius={[4, 4, 0, 0]} />
             <Bar dataKey="spend" name="Spend" fill="#ba1a1a" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -265,6 +263,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <ProgressBar percent={b.percent_used} />
+                  <BudgetDailyAverages budget={b} />
                 </div>
               ))}
             </div>
